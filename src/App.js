@@ -124,18 +124,19 @@ function xpToLevel(xp) {
   return { level: lv, current: xp - (t[lv-1]||0), next: (t[lv]||9999) - (t[lv-1]||0) };
 }
 
-// ─── AI ──────────────────────────────────────────────────────────────────────
+// ─── AI (Gemini) ─────────────────────────────────────────────────────────────
 async function callAI(prompt) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-6", max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
+  const key = process.env.REACT_APP_GEMINI_KEY;
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    }
+  );
   const data = await res.json();
-  const text = data.content.map(i => i.text || "").join("");
+  const text = data.candidates[0].content.parts[0].text;
   return JSON.parse(text.replace(/```json\n?|```/g, "").trim());
 }
 
@@ -160,25 +161,15 @@ Return ONLY: {"correct":true,"errorMessage":"if wrong","hint":"helpful hint"}`;
 }
 
 // ─── AD COMPONENT ────────────────────────────────────────────────────────────
-// Replace data-ad-client and data-ad-slot with your real AdSense values
 function AdBanner({ slot = "horizontal" }) {
   useEffect(() => {
     try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch {}
   }, []);
-  // Placeholder shown until AdSense is configured
   return (
     <div style={{
       background:"#1A1A2E", border:"1px dashed #2E2E45", borderRadius:10,
       padding:"12px", textAlign:"center", margin:"12px 0", color:"#33335A", fontSize:12
     }}>
-      {/* Uncomment below and add your publisher ID after AdSense approval:
-      <ins className="adsbygoogle"
-        style={{ display:"block" }}
-        data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
-        data-ad-slot="XXXXXXXXXX"
-        data-ad-format="auto"
-        data-full-width-responsive="true" />
-      */}
       📢 Ad Space — Configure AdSense after deployment
     </div>
   );
@@ -222,7 +213,6 @@ function AuthScreen({ onLogin }) {
   return (
     <div style={{minHeight:"100vh",background:"#0E0E1C",display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
       <div style={{width:"100%",maxWidth:380}}>
-        {/* Logo */}
         <div style={{textAlign:"center",marginBottom:36}}>
           <div style={{fontSize:11,letterSpacing:4,color:"#55557A",textTransform:"uppercase",marginBottom:10}}>New Syllabus Mathematics</div>
           <div style={{fontSize:34,fontWeight:900,color:"#fff",letterSpacing:-1}}>NSM Maths</div>
@@ -230,7 +220,6 @@ function AuthScreen({ onLogin }) {
         </div>
 
         <div style={{background:"#1C1C2E",borderRadius:20,padding:"32px 28px",border:"1px solid #2E2E45"}}>
-          {/* Tabs */}
           <div style={{display:"flex",background:"#12121F",borderRadius:10,padding:4,marginBottom:24,gap:4}}>
             {["login","signup"].map(m => (
               <button key={m} onClick={()=>{setMode(m);setError("");}}
@@ -421,7 +410,6 @@ export default function App() {
   const [xpToast, setXpToast]   = useState(null);
   const inputRef = useRef(null);
 
-  // Check session on mount
   useEffect(() => {
     const u = getSession();
     if (u) {
@@ -511,7 +499,6 @@ export default function App() {
 
   const S = { fontFamily:"system-ui,-apple-system,sans-serif", minHeight:"100vh", background:"#0E0E1C", color:"#E8E8F5" };
 
-  // ── HOME ──
   if (view === "home") return (
     <div style={S}>
       {xpToast && <XPToast amount={xpToast.amount} diff={xpToast.diff} onDone={()=>setXpToast(null)}/>}
@@ -562,7 +549,6 @@ export default function App() {
     </div>
   );
 
-  // ── CHAPTERS ──
   if (view === "chapters") return (
     <div style={S}>
       <div style={{maxWidth:740,margin:"0 auto",padding:"22px 20px"}}>
@@ -619,7 +605,6 @@ export default function App() {
     </div>
   );
 
-  // ── QUESTION ──
   if (view === "question" && question) {
     const step = !allDone ? question.steps[currentStep] : null;
     const freeLeft = HINT_FREE - (progress.hintsUsedToday||0);
