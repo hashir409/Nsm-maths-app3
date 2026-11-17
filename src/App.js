@@ -138,7 +138,7 @@ async function callAI(prompt) {
   const data = await res.json();
   const text = data.candidates[0].content.parts[0].text;
   return JSON.parse(text.replace(/```json\n?|```/g, "").trim());
-}
+}https://github.com/hashir409/Nsm-maths-app3/tree/main
 
 function makeQPrompt(bookLabel, chTitle, secTitle, diff) {
   const guide = {
