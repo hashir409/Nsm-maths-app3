@@ -124,20 +124,35 @@ function xpToLevel(xp) {
   return { level: lv, current: xp - (t[lv-1]||0), next: (t[lv]||9999) - (t[lv-1]||0) };
 }
 
-// ─── AI (Gemini) ─────────────────────────────────────────────────────────────
 async function callAI(prompt) {
-  const key = process.env.REACT_APP_GEMINI_KEY;
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${key}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-    }
-  );
-  const data = await res.json();
-  const text = data.candidates[0].content.parts[0].text;
-  return JSON.parse(text.replace(/```json\n?|```/g, "").trim());
+  const res = await fetch("/api/ai", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ prompt })
+  });
+
+  const raw = await res.text();
+  let data;
+
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    const message = `AI backend returned an invalid response (HTTP ${res.status}).`;
+    console.error(message);
+    alert(message);
+    throw new Error(message);
+  }
+
+  if (!res.ok) {
+    const message = data.error || `AI request failed (HTTP ${res.status}).`;
+    console.error("AI request failed:", message);
+    alert(message);
+    throw new Error(message);
+  }
+
+  return data;
 }
 
 function makeQPrompt(bookLabel, chTitle, secTitle, diff) {
